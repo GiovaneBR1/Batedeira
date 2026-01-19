@@ -14,8 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-
+import java.util.List;
+import com.batedeira.projeto.entity.Batelada;
 
 
 /* CONTROLLER
@@ -75,9 +75,7 @@ public class Controller {
 
 			@RequestHeader ("X-API-key") String apiKey) { /*"Quando um pedido chegar, olhe no 'Cabeçalho' (Header) dele. Procure 
 														   *por uma etiqueta chamada X-API-Key.Pegue o valor que está escrito nela
-			 											   * e me entregue na variável apiKey."
-			 											   */
-
+			 											   * e me entregue na variável apiKey."*/
 
 		// Por enquanto, vamos só simular a chamada:
 		System.out.println("Controller: Recebi o ID da Receita: " + dto.getReceitaId());
@@ -92,4 +90,20 @@ public class Controller {
 
 
 	}	
+	
+	@GetMapping //lista resumida
+	@Operation(summary = "Lista todas as bateladas registradas")
+	public ResponseEntity<List<Batelada>> listarTodas() {
+		List<Batelada> lista = bateladaservice.listarTodas();
+		return ResponseEntity.ok(lista);
+	}
+	
+	@GetMapping("/{id}") //lista resumida
+	@Operation(summary = "Busca os detalhes de uma batelada pelo id") 
+	public ResponseEntity<Batelada> buscarPorId(@PathVariable Long id)	{
+		Batelada batelada = bateladaservice.buscarPorId(id);
+		return ResponseEntity.ok(batelada);
+	}
+	
+	
 }

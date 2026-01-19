@@ -47,7 +47,7 @@ public class SecurityConfig {
          .authorizeHttpRequests(auth -> auth
              
              // (7) "Guarda-Costas, libere a 'Caixa de Correio' do ESP32"
-             .requestMatchers("/api/v1/bateladas/").permitAll()
+             .requestMatchers("/api/v1/bateladas/**").permitAll()
              
              // (8) "Guarda-Costas, libere a 'Sala de Documentação' (Swagger)"
              .requestMatchers("/swagger-ui.html").permitAll()

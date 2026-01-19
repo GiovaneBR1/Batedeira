@@ -9,7 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 /* Representa a tabela 'etapa_executada' no banco. 
  * Armazena individualmente os dados brutos medidos pelos sensores 
  * EX: "Etapa 1: 150.7kg medidos" (valor que o sensor na batedeira mediu)
@@ -53,13 +53,16 @@ public class EtapaExecutada {
 	  pertencem A UMA BATELADA Muitos registros de etapa pertencem a uma batelada" 
 	 */
 	@ManyToOne(fetch = FetchType.LAZY)
+	
+	
 
 	/* Diz ao JPA: A coluna no banco que faz a ligação se chama "batelada_id"
 	 * "nullable = false" garante que um registro de etapa sempre esteja atrelado a uma batelada.
 	 */
 	@JoinColumn(name = "batelada_id", nullable = false)
+	@JsonIgnore
 	private Batelada batelada; // (5) O objeto Java da Batelada
-
+	
 
 	// --- Getters e Setters ---
 	// (O JPA precisa deles)

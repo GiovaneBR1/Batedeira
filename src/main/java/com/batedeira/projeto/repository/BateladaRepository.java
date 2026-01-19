@@ -4,6 +4,8 @@ package com.batedeira.projeto.repository;
 //que este "Arquivista" vai gerenciar.
 import com.batedeira.projeto.entity.Batelada;
 
+import java.util.Optional;
+
 //(2) Importações do "Crachá" do Spring Data
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -49,4 +51,7 @@ public interface BateladaRepository extends JpaRepository<Batelada, Long> {
   // List<Batelada> findByDataInicioBetween(LocalDateTime inicio, LocalDateTime fim);
   //
   // (Mas, por agora, os métodos básicos são suficientes.)
+	
+	//traz a ultima batelada registrada no banco
+	Optional<Batelada> findTopByOrderByDataFimDesc();
 }

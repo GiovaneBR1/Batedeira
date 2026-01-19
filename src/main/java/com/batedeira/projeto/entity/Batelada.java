@@ -51,6 +51,8 @@ public class Batelada {
 	@Column(name = "data_fim", nullable = false)
 	private LocalDateTime dataFim;
 
+	
+	
 	/**
 	 * (3) @Enumerated: Como o Java deve salvar o Enum no banco.
 	 * (EnumType.STRING) diz: "Salve o TEXTO ('MANUAL', 'AUTOMATICO')".
@@ -67,6 +69,15 @@ public class Batelada {
 
 	@Column(name = "erro_mensagem", nullable = true)
 	private String erroMensagem; // (Para o status FORA_DE_TOLERANCIA ou ERRO)
+	
+	@Column(name = "sobra_anterior")
+    private Double sobraAnterior; // Quanto tinha de peso no inicio?
+
+    @Column(name = "minutos_ocioso_anterior")
+    private Long minutosOciosoAnterior; // Quanto tempo a máquina ficou parada antes dessa batida?
+
+    @Column(name = "iniciou_com_tanque_limpo")
+    private Boolean iniciouComTanqueLimpo; // O Service achou que estava limpo?
 
 
 	// --- O RELACIONAMENTO (A Conexão com a Receita) ---
@@ -161,4 +172,33 @@ public class Batelada {
 	public void setReceita(Receita receita) {
 		this.receita = receita;
 	}
+
+	public Double getSobraAnterior() {
+		return sobraAnterior;
+	}
+
+	public void setSobraAnterior(Double sobraAnterior) {
+		this.sobraAnterior = sobraAnterior;
+	}
+
+	public Long getMinutosOciosoAnterior() {
+		return minutosOciosoAnterior;
+	}
+
+	public void setMinutosOciosoAnterior(Long minutosOciosoAnterior) {
+		this.minutosOciosoAnterior = minutosOciosoAnterior;
+	}
+
+	public Boolean getIniciouComTanqueLimpo() {
+		return iniciouComTanqueLimpo;
+	}
+
+	public void setIniciouComTanqueLimpo(Boolean iniciouComTanqueLimpo) {
+		this.iniciouComTanqueLimpo = iniciouComTanqueLimpo;
+	}
+
+	public void setEtapasExecutadas(List<EtapaExecutada> etapasExecutadas) {
+		this.etapasExecutadas = etapasExecutadas;
+	}
+	
 }

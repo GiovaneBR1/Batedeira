@@ -1,6 +1,9 @@
 package com.batedeira.projeto.service;
 
+import java.util.List;
+
 import com.batedeira.projeto.dto.BateladaRequestDTO;
+import com.batedeira.projeto.entity.Batelada;
 
 
 /*É o "Contrato" Oficial que define O QUE a classe 
@@ -13,5 +16,9 @@ public interface BateladaService {
 	 * ao BateladaServiceImpl(quem realmente faz a lógica).  
 	 */
 	String processarNovaBatelada (BateladaRequestDTO dto, String apiKey);
+	
+	List<Batelada> listarTodas(); 
+	Batelada buscarPorId(Long id);
+	
 
 }

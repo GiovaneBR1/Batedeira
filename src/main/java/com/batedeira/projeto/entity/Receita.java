@@ -7,6 +7,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Entity //representa uma tabela no banco
 @Table(name = "receita") //mapeia o nome da tabela
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // <--- ADICIONE ISSO
 public class Receita {
 
 	@Id //indica que é PK
@@ -25,7 +27,7 @@ public class Receita {
 	private long id;
 	
 	//nome que o admin dá a receita
-	//nullable = false indica que a ccoluna não pode ficar vazia
+	//nullable = false indica que a coluna não pode ficar vazia
 	@Column(name="nome_amigavel" , nullable = false)
 	private String nomeAmigavel;
 	

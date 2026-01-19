@@ -6,6 +6,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue; // (NOVO) Para auto-incremento
 import jakarta.persistence.GenerationType; // (NOVO)
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.ManyToOne; // (NOVO) Para o relacionamento
 import jakarta.persistence.JoinColumn; // (NOVO) Para a Chave Estrangeira
@@ -79,6 +82,7 @@ public class EtapaReceita {
   * sem uma receita-mãe.
   */
  @JoinColumn(name = "receita_id", nullable = false)
+ @JsonIgnore
  private Receita receita; // (7) O objeto Java da "mãe"
 
 

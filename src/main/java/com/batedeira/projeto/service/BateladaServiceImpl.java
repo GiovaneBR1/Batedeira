@@ -1,14 +1,12 @@
 package com.batedeira.projeto.service;
 
-// --- Imports Limpos ---
 import com.batedeira.projeto.dto.BateladaRequestDTO;
 import com.batedeira.projeto.dto.EtapaRequestDTO;
 import com.batedeira.projeto.entity.Batelada;
 import com.batedeira.projeto.entity.EtapaExecutada;
 import com.batedeira.projeto.entity.EtapaReceita;
 import com.batedeira.projeto.entity.Receita;
-// ATENÇÃO: Confirme se os nomes dos seus Enums estão com letra Maiúscula ou minúscula no arquivo original
-import com.batedeira.projeto.entity.enums.modoBatedeira; 
+import com.batedeira.projeto.entity.enums.modoBatedeira;
 import com.batedeira.projeto.entity.enums.statusBatelada;
 import com.batedeira.projeto.repository.BateladaRepository;
 import com.batedeira.projeto.repository.ReceitaRepository;
@@ -18,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,10 +25,11 @@ public class BateladaServiceImpl implements BateladaService {
 
     @Value("${batedeira.projeto.api-key}")
     private String chaveCorreta;
-    
-    private static final Double MARGEM_ACEITACAO_RESTO = 20.0;
-    private static final int HORAS_ALERTA_VALIDADE = 4;
-    private static final Double  CAPACIDADE_TANQUE_KG = 500.0;
+
+    // --- PARÂMETROS DO AUDITOR ---
+    private static final Double MARGEM_ACEITACAO_RESTO = 20.0; // Kg
+    private static final int HORAS_ALERTA_VALIDADE = 4;        // Horas
+    private static final Double CAPACIDADE_TANQUE_KG = 500.0;  // Kg
 
     private final ReceitaRepository receitaRepository;
     private final BateladaRepository bateladaRepository;
@@ -39,86 +40,146 @@ public class BateladaServiceImpl implements BateladaService {
     }
 
     @Override
-    @Transactional // Garante a segurança dos dados
+    @Transactional
     public String processarNovaBatelada(BateladaRequestDTO dto, String apiKey) {
         
-        // 1. Validação da API Key
+        // 1. Segurança
         if (!chaveCorreta.equals(apiKey)) {
-            throw new SecurityException("API Key inválida ou ausente.");
+            throw new SecurityException("API Key inválida.");
         }
-        
-        //preparando a Bateladaa
+
+        // 2. Criação do Relatório
         Batelada batelada = new Batelada();
-        batelada.setModo(modoBatedeira.valueOf(dto.getModo())); //seta o modo
+        batelada.setModo(modoBatedeira.valueOf(dto.getModo()));
         
-        //horario que veio do CLP
         LocalDateTime inicioReal = LocalDateTime.parse(dto.getDataInicio(), DateTimeFormatter.ISO_DATE_TIME);
         LocalDateTime fimReal = LocalDateTime.parse(dto.getDataFim(), DateTimeFormatter.ISO_DATE_TIME);
         
         batelada.setDataInicio(inicioReal);
         batelada.setDataFim(fimReal);
-        batelada.setStatus(statusBatelada.OK);
+        batelada.setStatus(statusBatelada.OK); 
 
-        // 2. Lógica da Receita (O Plano)
-        Receita receitaEncontrada = null; // Começa nulo (Assume Manual)
+        // --- 3. O AUDITOR SILENCIOSO ---
+        Double pesoInicial = dto.getSobraAnterior();
+        if (pesoInicial == null) pesoInicial = 0.0;
+        batelada.setSobraAnterior(pesoInicial);
 
-        // Se for AUTOMATICO, resolvemos a receita. Se for MANUAL, pulamos este bloco.
-        if (modoBatedeira.AUTOMATICO.toString().equals(dto.getModo())) {
+        // Busca a ficha da última batelada para comparar tempos
+        Optional<Batelada> ultimaBateladaOpt = bateladaRepository.findTopByOrderByDataFimDesc();
 
-            if (dto.getReceitaId() == null) {
-                throw new IllegalArgumentException("ID da receita é obrigatório no modo automático");
-            }
-
-            Optional<Receita> busca = receitaRepository.findById(dto.getReceitaId());
+        if (ultimaBateladaOpt.isPresent()) {
+            Batelada ultima = ultimaBateladaOpt.get();
             
+            long minutosParado = ChronoUnit.MINUTES.between(ultima.getDataFim(), inicioReal);
+            batelada.setMinutosOciosoAnterior(minutosParado);
+
+            if (pesoInicial <= MARGEM_ACEITACAO_RESTO) {
+                // Tanque Limpo
+                batelada.setIniciouComTanqueLimpo(true);
+                System.out.println(">>> AUDITOR: Tanque Limpo. Sobra: " + pesoInicial);
+            } else {
+                // Tanque Sujo / Retomada
+                batelada.setIniciouComTanqueLimpo(false);
+                long horasParado = minutosParado / 60;
+                
+                System.out.println(">>> AUDITOR: Produto no tanque (" + pesoInicial + "kg). Parado há " + minutosParado + " min.");
+
+                if (horasParado >= HORAS_ALERTA_VALIDADE) {
+                    batelada.setErroMensagem("ALERTA: Sobra parada há " + horasParado + "h.");
+                } else {
+                    batelada.setErroMensagem("Nota: Retomada de processo.");
+                }
+            }
+        } else {
+            // Primeira vez rodando o sistema
+            batelada.setMinutosOciosoAnterior(0L);
+            batelada.setIniciouComTanqueLimpo(true);
+            System.out.println(">>> AUDITOR: Primeira batelada do sistema. Tanque assumido como LIMPO.");
+        }
+
+        // 4. Checagem de Transbordo (Preliminar)
+        // Nota: A validação exata depende do cálculo real abaixo, mas aqui fazemos uma estimativa
+        // baseada no que o ESP32 mandou como "Real" (mesmo se for acumulado, ajustamos depois).
+
+        // 5. Gestão de Receita (Sync ou Stub)
+        Receita receitaEncontrada = null;
+        if (modoBatedeira.AUTOMATICO.toString().equals(dto.getModo()) && dto.getReceitaId() != null) {
+            Optional<Receita> busca = receitaRepository.findById(dto.getReceitaId());
             if (busca.isPresent()) {
-                // ACHOU: Usa a existente e verifica sincronia
                 receitaEncontrada = busca.get();
                 sincronizarReceitaSeNecessario(receitaEncontrada, dto);
             } else {
-                // NÃO ACHOU: Cria uma nova (Stub)
                 receitaEncontrada = criarNovaReceitaStub(dto);
             }
         }
-
-        // 3. Montagem da Batelada (O Fato)
-        // (ISSO AGORA ESTÁ FORA DO IF DO AUTOMÁTICO - FUNCIONA P/ MANUAL TAMBÉM!)
-        
-        
-        
-        // Converte String para Enum (Trata maiúsculas/minúsculas por segurança)
-        batelada.setModo(modoBatedeira.valueOf(dto.getModo())); 
-        
-        batelada.setDataInicio(LocalDateTime.parse(dto.getDataInicio(), DateTimeFormatter.ISO_DATE_TIME));
-        batelada.setDataFim(LocalDateTime.parse(dto.getDataFim(), DateTimeFormatter.ISO_DATE_TIME));
-        batelada.setStatus(statusBatelada.OK);
-
-        // Conecta a receita (pode ser null se for Manual)
         batelada.setReceita(receitaEncontrada);
 
-        // 4. Loop das Etapas Executadas
+        // --- 6. SALVA ETAPAS (COM A LÓGICA DE SUBTRAÇÃO INTELIGENTE) ---
+        
+        // Começamos a conta a partir do que já estava no tanque
+        double leituraAnterior = batelada.getSobraAnterior();
+
         for (EtapaRequestDTO etapaDTO : dto.getEtapas()) {
             EtapaExecutada executada = new EtapaExecutada();
             executada.setOrdem(etapaDTO.getOrdem());
-            executada.setQuantidadeReal(etapaDTO.getQuantidadeReal());
             
-            // Adiciona no bolso da Batelada
+            // O valor que vem do ESP32 (Pode ser acumulado ou não)
+            double valorLidoPeloSensor = etapaDTO.getQuantidadeReal();
+            double quantidadeRealDoIngrediente;
+
+            // A Mágica: Descobre se é acumulativo ou absoluto
+            if (valorLidoPeloSensor >= leituraAnterior) {
+                // Se o valor subiu, é acumulativo: o ingrediente é a diferença
+                quantidadeRealDoIngrediente = valorLidoPeloSensor - leituraAnterior;
+            } else {
+                // Se o valor desceu, houve uma tara/reset: o ingrediente é o valor cheio
+                quantidadeRealDoIngrediente = valorLidoPeloSensor;
+            }
+
+            // Salva o valor REAL do ingrediente (descontado)
+            executada.setQuantidadeReal(quantidadeRealDoIngrediente);
+            
+            // Atualiza a leitura anterior para a próxima etapa do loop
+            leituraAnterior = valorLidoPeloSensor;
+            
             batelada.adicionarEtapaExecutada(executada);
         }
+        
+        // Verificação final de transbordo (agora com os valores corrigidos se necessário)
+        double totalAdicionado = batelada.getEtapasExecutadas().stream()
+                                         .mapToDouble(EtapaExecutada::getQuantidadeReal).sum();
+        
+        if ((totalAdicionado + pesoInicial) > CAPACIDADE_TANQUE_KG) {
+             batelada.setStatus(statusBatelada.ERRO); 
+             batelada.setErroMensagem("PERIGO: Risco de Transbordo! Total no tanque > " + CAPACIDADE_TANQUE_KG);
+        }
 
-        // 5. Salva tudo e Retorna o ID
+        // 7. Salva no Banco e retorna ID
         Batelada bateladaSalva = bateladaRepository.save(batelada);
         System.out.println(">>> ServiceImpl: SUCESSO! Batelada Salva com ID: " + bateladaSalva.getId());
-
+        
         return bateladaSalva.getId().toString();
     }
+    
+    // --- IMPLEMENTAÇÃO DOS MÉTODOS DE LEITURA (GET) ---
 
-    // --- Métodos Ajudantes ---
+    @Override
+    public List<Batelada> listarTodas() {
+        return bateladaRepository.findAll();
+    }
+
+    @Override
+    public Batelada buscarPorId(Long id) {
+        return bateladaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Batelada não encontrada com ID: " + id));
+    }
+
+    // --- MÉTODOS AUXILIARES (Receita) ---
 
     private Receita criarNovaReceitaStub(BateladaRequestDTO dto) {
         Receita novaReceita = new Receita();
         novaReceita.setId(dto.getReceitaId());
-        novaReceita.setNomeAmigavel("Receita: #" + dto.getReceitaId() + " (Auto-detectada)");
+        novaReceita.setNomeAmigavel("Receita: #" + dto.getReceitaId() + " (Auto)");
         novaReceita.setDataDescoberta(LocalDateTime.now());
         novaReceita.setAtiva(true);
 
@@ -129,7 +190,6 @@ public class BateladaServiceImpl implements BateladaService {
             novaEtapa.setQuantidadeEsperada(etapaDto.getQuantidadeEsperada());
             novaEtapa.setUnidade(etapaDto.getUnidade());
             novaEtapa.setToleranciaPercentual(null);
-
             novaReceita.addEtapa(novaEtapa);
         }
         return receitaRepository.save(novaReceita);
@@ -137,42 +197,25 @@ public class BateladaServiceImpl implements BateladaService {
 
     private void sincronizarReceitaSeNecessario(Receita receitaBanco, BateladaRequestDTO dto) {
         boolean houveMudanca = false;
-
         for (EtapaRequestDTO etapaDto : dto.getEtapas()) {
-            
-            // Procura a etapa correspondente no banco
             Optional<EtapaReceita> etapaBancoOpt = receitaBanco.getEtapas().stream()
                     .filter(e -> e.getOrdem() == etapaDto.getOrdem())
                     .findFirst();
 
             if (etapaBancoOpt.isPresent()) {
                 EtapaReceita etapaBanco = etapaBancoOpt.get();
-
-                // Compara valores (Double vs Double)
+                // Verifica mudanças no Plano (Receita)
                 boolean valorMudou = Math.abs(etapaBanco.getQuantidadeEsperada() - etapaDto.getQuantidadeEsperada()) > 0.001;
-                
-                // Compara descrição (String vs String)
                 boolean descricaoMudou = !etapaBanco.getAcaoOuIngrediente().equals(etapaDto.getAcaoOuIngrediente());
 
                 if (valorMudou || descricaoMudou) {
-                    System.out.println(">>> ServiceImpl: Mudança detectada na etapa " + etapaBanco.getOrdem() + ". Atualizando...");
-
                     etapaBanco.setQuantidadeEsperada(etapaDto.getQuantidadeEsperada());
                     etapaBanco.setAcaoOuIngrediente(etapaDto.getAcaoOuIngrediente());
-                    etapaBanco.setUnidade(etapaDto.getUnidade());
-                    
-                    // Reseta tolerância por segurança
                     etapaBanco.setToleranciaPercentual(null);
-
                     houveMudanca = true;
                 }
             }
         }
-
-        // CORREÇÃO: Faltava este bloco! Se mudou, tem que salvar!
-        if (houveMudanca) {
-            receitaRepository.save(receitaBanco);
-            System.out.println(">>> ServiceImpl: Receita atualizada no banco com sucesso.");
-        }
+        if (houveMudanca) receitaRepository.save(receitaBanco);
     }
 }
