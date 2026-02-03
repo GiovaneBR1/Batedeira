@@ -16,6 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import com.batedeira.projeto.entity.Batelada;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
 
 
 /* CONTROLLER
@@ -91,12 +95,23 @@ public class Controller {
 
 	}	
 	
-	@GetMapping //lista resumida
-	@Operation(summary = "Lista todas as bateladas registradas")
-	public ResponseEntity<List<Batelada>> listarTodas() {
-		List<Batelada> lista = bateladaservice.listarTodas();
-		return ResponseEntity.ok(lista);
-	}
+	@GetMapping
+    @Operation(summary = "Lista bateladas com paginação")
+    public ResponseEntity<Page<Batelada>> listarTodas(
+            @PageableDefault(page = 0, size = 10, sort = "dataInicio", direction = Sort.Direction.DESC) Pageable pageable) {
+        
+        Page<Batelada> pagina = bateladaservice.listarTodas(pageable);
+        return ResponseEntity.ok(pagina);
+    }
+
+    // DELETE 
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Remove uma batelada do sistema")
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        bateladaservice.deletarBatelada(id);
+        return ResponseEntity.noContent().build();
+    }
+
 	
 	@GetMapping("/{id}") //lista resumida
 	@Operation(summary = "Busca os detalhes de uma batelada pelo id") 

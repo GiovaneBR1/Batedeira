@@ -10,9 +10,12 @@ import com.batedeira.projeto.entity.enums.modoBatedeira;
 import com.batedeira.projeto.entity.enums.statusBatelada;
 import com.batedeira.projeto.repository.BateladaRepository;
 import com.batedeira.projeto.repository.ReceitaRepository;
+import com.batedeira.projeto.entity.enums.SensorMotor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +25,7 @@ import java.util.Optional;
 
 @Service
 public class BateladaServiceImpl implements BateladaService {
+	
 
     @Value("${batedeira.projeto.api-key}")
     private String chaveCorreta;
@@ -120,6 +124,48 @@ public class BateladaServiceImpl implements BateladaService {
         double leituraAnterior = batelada.getSobraAnterior();
 
         for (EtapaRequestDTO etapaDTO : dto.getEtapas()) {
+        	
+        	
+        	// === MELHORIA 1: FILTRO DE RUÍDO (O "Ignora Formiga") ===
+            // Se o peso for muito pequeno (ex: vibração do motor ou pingo de 0.2kg),
+            // a gente ignora para não sujar o relatório.
+            if (etapaDTO.getQuantidadeReal() != null && etapaDTO.getQuantidadeReal() < 0.5) {
+                System.out.println(">>> ALERTA: Leitura de ruído ignorada: " + etapaDTO.getQuantidadeReal() + "kg");
+                continue; // Pula para a próxima etapa, não salva essa!
+            }
+            
+            
+            // === MELHORIA 2: VALIDACAO DE SEGURANÇA (O "Xerife") ===
+            // Só validamos se tivermos uma Receita carregada (Modo Automático) 
+            // e se o ESP32 mandou o nome do sensor.
+            if (receitaEncontrada != null && etapaDTO.getSensorAcionado() != null) {
+                
+                // 1. Descobrimos o que a Receita esperava para essa ordem (ex: Passo 1)
+                Optional<EtapaReceita> etapaEsperadaOpt = receitaEncontrada.getEtapas().stream()
+                        .filter(e -> e.getOrdem() == etapaDTO.getOrdem())
+                        .findFirst();
+
+                if (etapaEsperadaOpt.isPresent()) {
+                    String ingredienteEsperado = etapaEsperadaOpt.get().getAcaoOuIngrediente(); // Ex: "Agua"
+                    String sensorRecebido = etapaDTO.getSensorAcionado();                       // Ex: "MOTOR_TRIGO" (Ops!)
+
+                    // 2. Chamamos nosso Enum para julgar
+                    boolean isCorreto = SensorMotor.validaIngrediente(sensorRecebido, ingredienteEsperado);
+
+                    if (!isCorreto) {
+                        // CRIME DETECTADO! O motor errado ligou.
+                        batelada.setStatus(statusBatelada.ERRO);
+                        String msgErro = "ERRO GRAVE: Troca de ingredientes! Passo " + etapaDTO.getOrdem() + 
+                                         " esperava '" + ingredienteEsperado + 
+                                         "' mas sensor acusou '" + sensorRecebido + "'";
+                        
+                        batelada.setErroMensagem(msgErro);
+                        System.out.println("🚨 " + msgErro);
+                    }
+                }
+            }
+        	
+        	
             EtapaExecutada executada = new EtapaExecutada();
             executada.setOrdem(etapaDTO.getOrdem());
             
@@ -135,7 +181,8 @@ public class BateladaServiceImpl implements BateladaService {
                 // Se o valor desceu, houve uma tara/reset: o ingrediente é o valor cheio
                 quantidadeRealDoIngrediente = valorLidoPeloSensor;
             }
-
+            
+            quantidadeRealDoIngrediente = Math.round(quantidadeRealDoIngrediente * 100.0) / 100.0;
             // Salva o valor REAL do ingrediente (descontado)
             executada.setQuantidadeReal(quantidadeRealDoIngrediente);
             
@@ -162,7 +209,6 @@ public class BateladaServiceImpl implements BateladaService {
     }
     
     // --- IMPLEMENTAÇÃO DOS MÉTODOS DE LEITURA (GET) ---
-
     @Override
     public List<Batelada> listarTodas() {
         return bateladaRepository.findAll();
@@ -191,6 +237,7 @@ public class BateladaServiceImpl implements BateladaService {
             novaEtapa.setUnidade(etapaDto.getUnidade());
             novaEtapa.setToleranciaPercentual(null);
             novaReceita.addEtapa(novaEtapa);
+            
         }
         return receitaRepository.save(novaReceita);
     }
@@ -217,5 +264,19 @@ public class BateladaServiceImpl implements BateladaService {
             }
         }
         if (houveMudanca) receitaRepository.save(receitaBanco);
+    }
+    
+    @Override
+    public Page<Batelada> listarTodas(Pageable pageable) {
+        // O findAll do repositório já sabe paginar!
+        return bateladaRepository.findAll(pageable);
+    }
+
+    @Override
+    public void deletarBatelada(Long id) {
+        if (!bateladaRepository.existsById(id)) {
+            throw new RuntimeException("Batelada não encontrada para exclusão.");
+        }
+        bateladaRepository.deleteById(id);
     }
 }

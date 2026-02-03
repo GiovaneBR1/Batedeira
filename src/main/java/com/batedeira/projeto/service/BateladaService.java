@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.batedeira.projeto.dto.BateladaRequestDTO;
 import com.batedeira.projeto.entity.Batelada;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 
 /*É o "Contrato" Oficial que define O QUE a classe 
@@ -17,8 +20,12 @@ public interface BateladaService {
 	 */
 	String processarNovaBatelada (BateladaRequestDTO dto, String apiKey);
 	
-	List<Batelada> listarTodas(); 
-	Batelada buscarPorId(Long id);
-	
+	Page<Batelada> listarTodas(Pageable pageable); 
 
+    Batelada buscarPorId(Long id);
+    
+    void deletarBatelada(Long id);
+
+	List<Batelada> listarTodas();
+	
 }

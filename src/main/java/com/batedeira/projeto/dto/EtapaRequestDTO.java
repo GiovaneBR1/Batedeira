@@ -35,6 +35,9 @@ public class EtapaRequestDTO {
 
 	    @Schema(description = "Valor real medido pelo sensor", example = "150.5")
 	    private Double quantidadeReal;
+	    
+	    @Schema(description = "Código do sensor que o ESP32 ativou", example = "MOTOR_AGUA")
+	    private String sensorAcionado;
 
 	    // --- Dados para auto-criação da EtapaReceita (O Plano) ---
 	    @Schema(description = "Descrição da etapa", example = "Farinha Tipo A")
@@ -88,6 +91,15 @@ public class EtapaRequestDTO {
 	    public void setUnidade(String unidade) {
 	        this.unidade = unidade;
 	    }
+
+		public String getSensorAcionado() {
+			return sensorAcionado;
+		}
+
+		public void setSensorAcionado(String sensorAcionado) {
+			this.sensorAcionado = sensorAcionado;
+		}
+	    
 	}
 	
 
