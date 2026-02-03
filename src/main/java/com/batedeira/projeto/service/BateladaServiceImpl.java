@@ -30,10 +30,10 @@ public class BateladaServiceImpl implements BateladaService {
     @Value("${batedeira.projeto.api-key}")
     private String chaveCorreta;
 
-    // --- PARÂMETROS DO AUDITOR ---
+    // --- PARÂMETROS DO Service ---
     private static final Double MARGEM_ACEITACAO_RESTO = 20.0; // Kg
     private static final int HORAS_ALERTA_VALIDADE = 4;        // Horas
-    private static final Double CAPACIDADE_TANQUE_KG = 500.0;  // Kg
+    private static final Double CAPACIDADE_TANQUE_KG = 1000.0;  // Kg
 
     private final ReceitaRepository receitaRepository;
     private final BateladaRepository bateladaRepository;
@@ -89,7 +89,7 @@ public class BateladaServiceImpl implements BateladaService {
                 System.out.println(">>> AUDITOR: Produto no tanque (" + pesoInicial + "kg). Parado há " + minutosParado + " min.");
 
                 if (horasParado >= HORAS_ALERTA_VALIDADE) {
-                    batelada.setErroMensagem("ALERTA: Sobra parada há " + horasParado + "h.");
+                    batelada.setErroMensagem("ALERTA: Produto parado há " + horasParado + "h.");
                 } else {
                     batelada.setErroMensagem("Nota: Retomada de processo.");
                 }
@@ -223,6 +223,12 @@ public class BateladaServiceImpl implements BateladaService {
     // --- MÉTODOS AUXILIARES (Receita) ---
 
     private Receita criarNovaReceitaStub(BateladaRequestDTO dto) {
+    	
+    	String ingredienteSensor;
+    	
+    	
+    	
+    	
         Receita novaReceita = new Receita();
         novaReceita.setId(dto.getReceitaId());
         novaReceita.setNomeAmigavel("Receita: #" + dto.getReceitaId() + " (Auto)");
@@ -238,6 +244,13 @@ public class BateladaServiceImpl implements BateladaService {
             novaEtapa.setToleranciaPercentual(null);
             novaReceita.addEtapa(novaEtapa);
             
+            
+          //  for (SensorMotor s : values()) {
+
+               // if (s.equals()
+
+                 // novaEtapa.setAcaoOuIngrediente(s);
+           //[ }
         }
         return receitaRepository.save(novaReceita);
     }

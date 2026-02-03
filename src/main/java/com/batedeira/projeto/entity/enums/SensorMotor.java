@@ -1,5 +1,12 @@
 package com.batedeira.projeto.entity.enums;
 
+
+/*aqui o dado que chega é traduzido para uma linguagem que o java entenda
+ * Exemplo: Vem do ESP32  valor MOTOR_COLA da variavel sensorAcionado
+ * o loop for, na linha 27, percorre a lista [MOTOR_AGUA, MOTOR_TRIGO,  MOTOR_COLA] 
+ * até encontrar o valor recebido com algum valor compativel na lista
+ * Se achar, retorna e valida se o ingrediente que chegou contem o texto que o ingredienteEsperado esperava.
+ */
 public enum SensorMotor {
 	
 	AGUA("MOTOR_AGUA","Agua"),
