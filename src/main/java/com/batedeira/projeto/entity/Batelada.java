@@ -24,19 +24,17 @@ import java.util.List;
 import java.time.LocalDateTime;
 
 
-/* Objetivo: Ele representa (mapeia) a tabela 'batelada' do
-	  nosso banco (o MER). É o "Relatório de Execução"
-	  (ex: "A execução da máquina das 14:30 às 14:45").
-
-  	(1) @Entity: Marca como (tabela).
+/*
+ -> Representa a tabela 'batelada' no banco de dados 
+ ->Aqui contém os dados principais de uma batelada: hora de ínicio, hora de fim, 
+   que receita usou, se foi no automático, se deu erro.
  */
 @Entity
-@Table(name = "batelada") // Mapeia para a tabela do MER
+@Table(name = "batelada") 
 public class Batelada {
 
 	/**
-	 * (2) @Id e @GeneratedValue: Chave Primária (PK) com Auto-Incremento.
-	 * O sistema gera o ID para cada nova batelada.
+	 -> Chave primária com auto-incremento
 	 */
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,25 +51,23 @@ public class Batelada {
 
 	
 	
-	/**
-	 * (3) @Enumerated: Como o Java deve salvar o Enum no banco.
-	 * (EnumType.STRING) diz: "Salve o TEXTO ('MANUAL', 'AUTOMATICO')".
-	 * Isso é muito melhor do que salvar o número (0 ou 1),
-	 * pois o banco fica mais fácil de ler.
+	 /*
+	 ->O "@Enumerated(EnumType.STRING)" garante que o banco salve 'MANUAL' e 'AUTOMATICO' 
+	   ao invés de 0 e 1.
 	 */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "modo", nullable = false)
-	private modoBatedeira modo; // (4) Usa o modoBatedeira
+	private modoBatedeira modo; 
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
-	private statusBatelada status; // (5) Usa o statusBatelada
+	private statusBatelada status; 
 
 	@Column(name = "erro_mensagem", nullable = true)
-	private String erroMensagem; // (Para o status FORA_DE_TOLERANCIA ou ERRO)
+	private String erroMensagem; // Para o status FORA_DE_TOLERANCIA ou ERRO
 	
 	@Column(name = "sobra_anterior")
-    private Double sobraAnterior; // Quanto tinha de peso no inicio?
+    private Double sobraAnterior; //se havia resto no copo
 
     @Column(name = "minutos_ocioso_anterior")
     private Long minutosOciosoAnterior; // Quanto tempo a máquina ficou parada antes dessa batida?
@@ -80,10 +76,8 @@ public class Batelada {
     private Boolean iniciouComTanqueLimpo; // O Service achou que estava limpo?
 
 
-	// --- O RELACIONAMENTO (A Conexão com a Receita) ---
-
-	/**
-	 * (6) @ManyToOne e @JoinColumn: Exatamente como na EtapaReceita.
+	/*
+	 * (6) @ManyToOne e @JoinColumn: 
 	 * Dizemos ao JPA: "MUITAS (Many) Bateladas
 	 * executam UMA (One) Receita."
 	 */

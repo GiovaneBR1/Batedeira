@@ -36,6 +36,13 @@ public enum SensorMotor {
 		
 		return false;
 	}
-	
-	
+
+	public static String descobrirIngrediente(String codigoRecebido) {
+	    for(SensorMotor s : values()) {
+	        if (s.codigoEsp32.equalsIgnoreCase(codigoRecebido)) {
+	            return s.ingredienteBanco;
+	        }
+	    }
+	    return "DESCONHECIDO (" + codigoRecebido + ")";
+	}
 }

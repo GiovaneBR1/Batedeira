@@ -18,7 +18,7 @@ public interface BateladaService {
 	 * 3- (BateladaRequestDTO dto, String apiKey) -> Os parâmetros que o controller deve entregar
 	 * ao BateladaServiceImpl(quem realmente faz a lógica).  
 	 */
-	String processarNovaBatelada (BateladaRequestDTO dto, String apiKey);
+	Batelada processarNovaBatelada (BateladaRequestDTO dto, String apiKey);
 	
 	Page<Batelada> listarTodas(Pageable pageable); 
 
