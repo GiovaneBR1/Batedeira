@@ -6,7 +6,8 @@ package com.batedeira.projeto.entity.enums;
 public enum StatusEtapa {
 
 	OK,
-    ERRO
+    ERRO,
+    FORA_DE_TOLERANCIA
 	
 }
 

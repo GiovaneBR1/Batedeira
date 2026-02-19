@@ -22,12 +22,15 @@ public class EtapaRequestDTO {
 
 	public EtapaRequestDTO(Integer ordem, String sensorAcionado, Double quantidadeEsperada, Double quantidadeReal,
 			String unidade) {
-		super();
 		this.ordem = ordem;
 		this.sensorAcionado = sensorAcionado;
 		this.quantidadeEsperada = quantidadeEsperada;
 		this.quantidadeReal = quantidadeReal;
 		this.unidade = unidade;
+	}
+
+	public EtapaRequestDTO() {
+		
 	}
 
 	public Integer getOrdem() {
