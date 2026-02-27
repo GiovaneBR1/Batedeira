@@ -32,8 +32,6 @@ import java.util.Optional;
 @Service
 public class BateladaServiceImpl implements BateladaService {
 
-
-
 	@Value("${batedeira.projeto.api-key}")
 	private String chaveCorreta;
 
@@ -44,8 +42,6 @@ public class BateladaServiceImpl implements BateladaService {
 	public BateladaServiceImpl(BateladaRepository bateladaRepository, ParamRepository paramRepository) {
 		this.paramRepository = paramRepository;
 		this.bateladaRepository = bateladaRepository;
-		
-	
 
 	}
 
@@ -67,18 +63,9 @@ public class BateladaServiceImpl implements BateladaService {
 		
 		batelada.setEtapasExecutadas(new ArrayList<>());
 		batelada.setStatus(statusBatelada.OK);
-		
-		double toleranciaDef = 5.0;
-		
-		List<ParametrosGlobal> listaParams = paramRepository.findAll();
-        if (!listaParams.isEmpty()) {
-            
-            toleranciaDef = listaParams.get(0).getToleranciaDef();
-        }
-        
-        batelada.setToleranciaAplicada(toleranciaDef);
-		
+
         Tolerancia calc = new Tolerancia();
+        ParametrosGlobal toleranciaDef;
         
 		// 2. definir as etapas
 		for (EtapaRequestDTO etapaDTO : dto.getEtapas()) {

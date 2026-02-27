@@ -19,9 +19,6 @@ public class BateladaRequestDTO {
 	@Schema(description = "Modo de operação da máquina", example = "AUTOMATICO")
 	private String modo;
 
-	@Schema(description = "Peso lido pelo sensor ANTES de iniciar", example = "20.5")
-	private Double sobraAnterior;
-
 	
 	private List<EtapaRequestDTO> etapas;
 
@@ -56,14 +53,6 @@ public class BateladaRequestDTO {
 
 	public void setEtapas(List<EtapaRequestDTO> etapas) {
 		this.etapas = etapas;
-	}
-
-	public Double getSobraAnterior() {
-		return sobraAnterior;
-	}
-
-	public void setSobraAnterior(Double sobraAnterior) {
-		this.sobraAnterior = sobraAnterior;
 	}
 
 }

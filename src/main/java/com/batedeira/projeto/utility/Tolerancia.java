@@ -6,7 +6,7 @@ import com.batedeira.projeto.entity.enums.statusBatelada;
 
 public class Tolerancia {
 	
-	public StatusEtapa toleranciaEtapa(double qtdReal, double qtdEsperada,double toleranciDef)  {
+	public StatusEtapa toleranciaEtapa(double qtdReal, double qtdEsperada,ParametrosGlobal toleranciDef)  {
 		ParametrosGlobal porcentagem = new ParametrosGlobal();
 		double porcentagemAceitação = porcentagem.getToleranciaDef();
 

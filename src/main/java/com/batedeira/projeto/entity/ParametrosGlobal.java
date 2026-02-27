@@ -12,7 +12,7 @@ public class ParametrosGlobal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Double toleranciaDef = 5.0;
+    private Double toleranciaDef;
 
     // Getters e Setters obrigatórios
     public Long getId() { return id; }
