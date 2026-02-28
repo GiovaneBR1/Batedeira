@@ -104,8 +104,8 @@ public class Batelada {
 		return toleranciaAplicada;
 	}
 
-	public void setToleranciaAplicada(double toleranciaAplicada) {
-		this.toleranciaAplicada = toleranciaAplicada;
+	public void setToleranciaAplicada(double toleranciaDef) {
+		this.toleranciaAplicada = toleranciaDef;
 	}
 
 	public Long getId() {
@@ -154,38 +154,6 @@ public class Batelada {
 
 	public void setErroMensagem(String erroMensagem) {
 		this.erroMensagem = erroMensagem;
-	}
-
-	public Receita getReceita() {
-		return receita;
-	}
-
-	public void setReceita(Receita receita) {
-		this.receita = receita;
-	}
-
-	public Double getSobraAnterior() {
-		return sobraAnterior;
-	}
-
-	public void setSobraAnterior(Double sobraAnterior) {
-		this.sobraAnterior = sobraAnterior;
-	}
-
-	public Long getMinutosOciosoAnterior() {
-		return minutosOciosoAnterior;
-	}
-
-	public void setMinutosOciosoAnterior(Long minutosOciosoAnterior) {
-		this.minutosOciosoAnterior = minutosOciosoAnterior;
-	}
-
-	public Boolean getIniciouComTanqueLimpo() {
-		return iniciouComTanqueLimpo;
-	}
-
-	public void setIniciouComTanqueLimpo(Boolean iniciouComTanqueLimpo) {
-		this.iniciouComTanqueLimpo = iniciouComTanqueLimpo;
 	}
 
 	public void setEtapasExecutadas(List<EtapaExecutada> etapasExecutadas) {

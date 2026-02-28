@@ -31,10 +31,11 @@ public class ParametrosController {
 
 	@PostMapping("/atualizar")
 	public ResponseEntity<Double> atualizar(@RequestBody ParametroRequestDTO dto) {
-
 		
 		Double novoValor = dto.getNovoValorTolerancia();
-		if (novoValor == null) {
+		if (novoValor == null || novoValor == 0) {
+			System.out.println("Não permitido definir tolerancia zero");
+			novoValor = 5.0;
 		    return ResponseEntity.badRequest().build(); 
 		}
 		service.atualizar(novoValor);

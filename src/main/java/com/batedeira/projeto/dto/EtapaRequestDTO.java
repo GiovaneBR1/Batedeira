@@ -19,6 +19,7 @@ public class EtapaRequestDTO {
 
     // Unidade de medida (opcional, pode deixar fixo no Java se for sempre KG)
     private String unidade;
+    private Double toleranciaEspecifica;
 
 	public EtapaRequestDTO(Integer ordem, String sensorAcionado, Double quantidadeEsperada, Double quantidadeReal,
 			String unidade) {
@@ -72,4 +73,11 @@ public class EtapaRequestDTO {
 	public void setUnidade(String unidade) {
 		this.unidade = unidade;
 	} 
+	public Double getToleranciaEspecifica() {
+        return toleranciaEspecifica;
+    }
+
+    public void setToleranciaEspecifica(Double toleranciaEspecifica) {
+        this.toleranciaEspecifica = toleranciaEspecifica;
+    }
 }

@@ -2,23 +2,30 @@ package com.batedeira.projeto.utility;
 
 import com.batedeira.projeto.entity.ParametrosGlobal;
 import com.batedeira.projeto.entity.enums.StatusEtapa;
-import com.batedeira.projeto.entity.enums.statusBatelada;
 
 public class Tolerancia {
-	
-	public StatusEtapa toleranciaEtapa(double qtdReal, double qtdEsperada,ParametrosGlobal toleranciDef)  {
-		ParametrosGlobal porcentagem = new ParametrosGlobal();
-		double porcentagemAceitação = porcentagem.getToleranciaDef();
+
+	public StatusEtapa toleranciaEtapa(double qtdReal, double qtdEsperada, ParametrosGlobal toleranciaDef,
+			Double toleranciaEspecifica) {
+
+		//Double porcentagemAceitação = toleranciaDef.getToleranciaDef();
 
 		if (qtdEsperada <= 0 && qtdReal <= 0) {
 			return StatusEtapa.ERRO;
 		}
-		
-		
+		double porcentagemPermitida;
+		if (toleranciaEspecifica != null) {
+			porcentagemPermitida = toleranciaEspecifica; // Usa a específica do ingrediente
+		} else {
+			// Se não tem específica, puxa a global (ou 5.0 se der ruim)
+			porcentagemPermitida = (toleranciaDef != null && toleranciaDef.getToleranciaDef() != null)
+					? toleranciaDef.getToleranciaDef()
+					: 5.0;
+		}
 		double diferenca = Math.abs(qtdReal - qtdEsperada);
 		double toleranciaPercentual = (diferenca / qtdEsperada) * 100;
 
-		if (toleranciaPercentual <= porcentagemAceitação) {
+		if (toleranciaPercentual <= porcentagemPermitida) {
 			return StatusEtapa.OK;
 
 		} else

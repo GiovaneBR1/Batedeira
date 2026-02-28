@@ -32,6 +32,8 @@ import java.util.Optional;
 @Service
 public class BateladaServiceImpl implements BateladaService {
 
+
+
 	@Value("${batedeira.projeto.api-key}")
 	private String chaveCorreta;
 
@@ -42,7 +44,7 @@ public class BateladaServiceImpl implements BateladaService {
 	public BateladaServiceImpl(BateladaRepository bateladaRepository, ParamRepository paramRepository) {
 		this.paramRepository = paramRepository;
 		this.bateladaRepository = bateladaRepository;
-
+		
 	}
 
 	@Override
@@ -59,13 +61,22 @@ public class BateladaServiceImpl implements BateladaService {
 		batelada.setDataInicio(LocalDateTime.parse(dto.getDataInicio()));
 		batelada.setDataFim(LocalDateTime.parse(dto.getDataFim()));
 		batelada.setModo(modoBatedeira.valueOf(dto.getModo().toUpperCase().trim()));
-		batelada.setSobraAnterior(dto.getSobraAnterior());
-		
 		batelada.setEtapasExecutadas(new ArrayList<>());
 		batelada.setStatus(statusBatelada.OK);
-
+		
+		ParametrosGlobal toleranciaDef = new ParametrosGlobal();
+		
+		
+		List<ParametrosGlobal> listaParams = paramRepository.findAll();
+		
+        if (!listaParams.isEmpty()) {
+            
+            toleranciaDef = listaParams.get(0);
+        }
+        
+        batelada.setToleranciaAplicada(toleranciaDef.getToleranciaDef());
+		
         Tolerancia calc = new Tolerancia();
-        ParametrosGlobal toleranciaDef;
         
 		// 2. definir as etapas
 		for (EtapaRequestDTO etapaDTO : dto.getEtapas()) {
@@ -80,7 +91,9 @@ public class BateladaServiceImpl implements BateladaService {
 
 	        double qtdReal = etapaDTO.getQuantidadeReal();
 			double qtdEsperada = etapaDTO.getQuantidadeEsperada();
-			StatusEtapa vereditoE = calc.toleranciaEtapa(qtdReal, qtdEsperada,toleranciaDef);
+			Double toleranciaEspecifica = etapaDTO.getToleranciaEspecifica();
+			System.out.println(">>> Etapa " + etapaDTO.getOrdem() + " | Tol. Específica que chegou: " + toleranciaEspecifica);
+			StatusEtapa vereditoE = calc.toleranciaEtapa(qtdReal, qtdEsperada, toleranciaDef, toleranciaEspecifica);
 			etapa.setStatus(vereditoE);
 			
 			if (vereditoE == StatusEtapa.FORA_DE_TOLERANCIA) {
