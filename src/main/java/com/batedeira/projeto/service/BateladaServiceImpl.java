@@ -1,33 +1,28 @@
 package com.batedeira.projeto.service;
 
-import com.batedeira.projeto.controller.Controller;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.batedeira.projeto.dto.BateladaRequestDTO;
 import com.batedeira.projeto.dto.EtapaRequestDTO;
 import com.batedeira.projeto.entity.Batelada;
 import com.batedeira.projeto.entity.EtapaExecutada;
 import com.batedeira.projeto.entity.ParametrosGlobal;
 import com.batedeira.projeto.entity.enums.SensorMotor; // Importante!
+import com.batedeira.projeto.entity.enums.StatusEtapa; // Assumindo que você tem esse enum
 import com.batedeira.projeto.entity.enums.modoBatedeira;
 import com.batedeira.projeto.entity.enums.statusBatelada;
-import com.batedeira.projeto.entity.enums.StatusEtapa; // Assumindo que você tem esse enum
 import com.batedeira.projeto.repository.BateladaRepository;
 import com.batedeira.projeto.repository.ParamRepository;
 import com.batedeira.projeto.utility.Tolerancia;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.ListCrudRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BateladaServiceImpl implements BateladaService {
@@ -130,5 +125,32 @@ public class BateladaServiceImpl implements BateladaService {
 			throw new RuntimeException("Batelada não encontrada.");
 		}
 		bateladaRepository.deleteById(id);
+	}
+	
+	@Override
+	public Page<Batelada> buscarComFiltros(String modoStr, String statusStr, String dataInicioStr, String dataFimStr, Pageable pageable) {
+		
+		// 1. Converte o texto do modo para o Enum correspondente
+		// O .toUpperCase() é o nosso escudo: se o Front-end mandar "manual" minúsculo, o Java converte para "MANUAL" e não dá erro.
+		modoBatedeira modo = (modoStr != null && !modoStr.isBlank()) 
+		                     ? modoBatedeira.valueOf(modoStr.toUpperCase()) 
+		                     : null;
+		
+		// 2. Converte o texto do status para o Enum
+		statusBatelada status = (statusStr != null && !statusStr.isBlank()) 
+		                        ? statusBatelada.valueOf(statusStr.toUpperCase()) 
+		                        : null;
+		
+		// 3. Converte os textos das datas para o relógio interno do Java (LocalDateTime)
+		LocalDateTime dataInicio = (dataInicioStr != null && !dataInicioStr.isBlank()) 
+		                           ? LocalDateTime.parse(dataInicioStr) 
+		                           : null;
+		                           
+		LocalDateTime dataFim = (dataFimStr != null && !dataFimStr.isBlank()) 
+		                        ? LocalDateTime.parse(dataFimStr) 
+		                        : null;
+
+		// 4. Manda tudo já traduzido para o  Repository buscar
+		return bateladaRepository.buscarComFiltros(modo, status, dataInicio, dataFim, pageable);
 	}
 }

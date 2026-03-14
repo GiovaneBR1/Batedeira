@@ -1,5 +1,8 @@
 package com.batedeira.projeto.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +16,17 @@ public class ParametrosGlobal {
 	private Long id;
 
 	private Double toleranciaDef;
+	
+	@Column(name = "data_ultima_manutencao")
+	private LocalDateTime dataUltimaManutencao;
+
+	public LocalDateTime getDataUltimaManutencao() {
+		return dataUltimaManutencao;
+	}
+
+	public void setDataUltimaManutencao(LocalDateTime dataUltimaManutencao) {
+		this.dataUltimaManutencao = dataUltimaManutencao;
+	}
 
 	// Getters e Setters obrigatórios
 	public Long getId() {

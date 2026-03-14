@@ -21,6 +21,8 @@ public interface BateladaService {
 	Batelada processarNovaBatelada (BateladaRequestDTO dto, String apiKey);
 	
 	Page<Batelada> listarTodas(Pageable pageable); 
+	
+	Page<Batelada> buscarComFiltros(String modo, String status, String dataInicio, String dataFim, Pageable pageable);
 
     Batelada buscarPorId(Long id);
     

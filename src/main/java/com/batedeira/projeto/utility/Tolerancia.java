@@ -19,8 +19,7 @@ public class Tolerancia {
 		} else {
 			// Se não tem específica, puxa a global (ou 5.0 se der ruim)
 			porcentagemPermitida = (toleranciaDef != null && toleranciaDef.getToleranciaDef() != null)
-					? toleranciaDef.getToleranciaDef()
-					: 5.0;
+					? toleranciaDef.getToleranciaDef() : 5.0; //essa estrutura é chamada de operador ternário e faz a mesma função do if-else
 		}
 		double diferenca = Math.abs(qtdReal - qtdEsperada);
 		double toleranciaPercentual = (diferenca / qtdEsperada) * 100;

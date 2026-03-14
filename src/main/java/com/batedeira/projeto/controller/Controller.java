@@ -1,5 +1,11 @@
 package com.batedeira.projeto.controller;
 
+import org.springframework.http.HttpHeaders;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,11 +20,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.batedeira.projeto.dto.BateladaRequestDTO;
 import com.batedeira.projeto.entity.Batelada;
 import com.batedeira.projeto.service.BateladaService;
+import com.batedeira.projeto.service.RelatorioPdfService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,9 +48,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class Controller {
 
 	private final BateladaService bateladaservice; // final = valor permanente
+	private final RelatorioPdfService pdfService;
+	LocalDateTime agora = LocalDateTime.now();
+    DateTimeFormatter fmtHora = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
 	public Controller(BateladaService bateladaservice) {
 		this.bateladaservice = bateladaservice;
+		this.pdfService = new RelatorioPdfService();
 	}
 
 	// método que o ESP32 vai chamar
@@ -62,11 +74,16 @@ public class Controller {
 	}
 
 	@GetMapping
-	@Operation(summary = "Lista bateladas com paginação")
-	public ResponseEntity<Page<Batelada>> listarTodas(
-			@PageableDefault(page = 0, size = 10, sort = "dataInicio", direction = Sort.Direction.DESC) Pageable pageable) {
+	@Operation(summary = "Lista bateladas com paginação e filtros dinâmicos")
+	public ResponseEntity<Page<Batelada>> listarTodas(@RequestParam(required = false) String modo,
+			@RequestParam(required = false) String status, @RequestParam(required = false) String dataInicio,
+			@RequestParam(required = false) String dataFim,
+			@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
 
-		Page<Batelada> pagina = bateladaservice.listarTodas(pageable);
+		// O Garçom pega nas anotações (que podem ser nulas) e entrega ao Gerente
+		// (Service)
+		Page<Batelada> pagina = bateladaservice.buscarComFiltros(modo, status, dataInicio, dataFim, pageable);
+
 		return ResponseEntity.ok(pagina);
 	}
 
@@ -85,4 +102,33 @@ public class Controller {
 		return ResponseEntity.ok(batelada);
 	}
 
+	@GetMapping("/{id}/relatorio")
+	public ResponseEntity<byte[]> baixarPdf(@PathVariable long id) {
+		Batelada batelada = bateladaservice.buscarPorId(id);
+		byte[] ArquivoPDF = pdfService.gerarRelatorioBatelada(batelada);
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+		headers.setContentDispositionFormData("attachment", "Relatorio_batelada_" + id + ".pdf");
+		return ResponseEntity.ok().headers(headers).body(ArquivoPDF);
+
+	}
+
+	@GetMapping("/relatorio-geral")
+	public ResponseEntity<byte[]> listarTodosRelatorio(@RequestParam(required = false) String modo,
+			@RequestParam(required = false) String status, @RequestParam(required = false) String dataInicio,
+			@RequestParam(required = false) String dataFim) {
+		Page<Batelada> pagina = bateladaservice.buscarComFiltros(modo, status, dataInicio, dataFim, null);
+		List<Batelada> lista = pagina.getContent();
+		byte[] arquivoPdf = pdfService.gerarRelatorioLista(lista);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+		headers.setContentDispositionFormData("attachment", "Relatorio_geral_" + agora.format(fmtHora) + ".pdf");
+		
+		
+
+		return ResponseEntity.ok()
+		        .headers(headers)
+		        .body(arquivoPdf);
+	}
 }
